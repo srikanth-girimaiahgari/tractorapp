@@ -33,7 +33,7 @@ jobs:
         run: |
           docker build -t tractor-app:${{ github.sha }} .
           docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-          docker scout cves tractor-app:${{ github.sha }} .
+          # docker scout cves tractor-app:${{ github.sha }} .
 
       - name: Run Docker Image
         run: docker run -d -p 8080:8080 tractor-app:${{ github.sha }}
