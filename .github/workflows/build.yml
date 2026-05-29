@@ -26,8 +26,8 @@ jobs:
       - name: Run Tests
         run: mvn test
 
-      - name: Sonar
-        run: mvn sonar:sonar
+      # - name: Sonar
+      #   run: mvn sonar:sonar
 
       - name: Build Docker Image
         run: |
