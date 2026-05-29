@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Tractor Field Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --soil: #2C1810;
+    --earth: #5C3D2E;
+    --clay: #A0522D;
+    --harvest: #E8A020;
+    --sun: #F5C842;
+    --sky: #C8E6C9;
+    --leaf: #4CAF50;
+    --dark: #1A0F0A;
+    --surface: #F9F3EC;
+    --card: #FFFFFF;
+    --text: #2C1810;
+    --muted: #8B6355;
+    --border: #E8D5C4;
+    --danger: #C0392B;
+    --success: #27AE60;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--surface);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--soil);
+    color: white;
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.2rem;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .logo-icon { font-size: 1.5rem; }
+  .logo span { color: var(--harvest); }
+
+  .nav-tabs {
+    display: flex;
+    gap: 0.25rem;
+  }
+  .nav-tab {
+    padding: 0.45rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: rgba(255,255,255,0.6);
+    border: none;
+    background: transparent;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+  .nav-tab:hover { color: white; background: rgba(255,255,255,0.08); }
+  .nav-tab.active { background: var(--harvest); color: var(--soil); font-weight: 700; }
+
+  /* MAIN */
+  main { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* STAT CARDS */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--harvest);
+  }
+  .stat-card.green::before { background: var(--leaf); }
+  .stat-card.red::before { background: var(--danger); }
+  .stat-card.blue::before { background: #3498DB; }
+
+  .stat-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+  .stat-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--soil);
+    line-height: 1;
+  }
+  .stat-sub { font-size: 0.72rem; color: var(--muted); margin-top: 0.3rem; }
+
+  /* SECTION HEADER */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--soil);
+  }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1.1rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+  .btn-primary { background: var(--harvest); color: var(--soil); font-weight: 700; }
+  .btn-primary:hover { background: var(--sun); }
+  .btn-danger { background: #FDECEA; color: var(--danger); }
+  .btn-danger:hover { background: #F5B7B1; }
+  .btn-success { background: #E8F8F0; color: var(--success); }
+  .btn-success:hover { background: #A9DFBF; }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--border); }
+  .btn-sm { padding: 0.3rem 0.7rem; font-size: 0.72rem; }
+
+  /* TABLE */
+  .table-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    background: var(--soil);
+    color: rgba(255,255,255,0.75);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-weight: 500;
+  }
+  td { padding: 0.85rem 1rem; font-size: 0.82rem; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #FDF8F4; }
+
+  /* BADGE */
+  .badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+  }
+  .badge-pending { background: #FEF3C7; color: #92400E; }
+  .badge-paid { background: #D1FAE5; color: #065F46; }
+  .badge-partial { background: #DBEAFE; color: #1E40AF; }
+
+  /* WORK TYPE */
+  .work-type {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.68rem;
+    background: var(--surface);
+    color: var(--earth);
+    border: 1px solid var(--border);
+  }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    animation: slideUp 0.2s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .modal-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-bottom: 1.25rem;
+    color: var(--soil);
+  }
+  .modal-footer {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+  }
+
+  /* FORM */
+  .form-group { margin-bottom: 1rem; }
+  label {
+    display: block;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+    margin-bottom: 0.35rem;
+  }
+  input, select, textarea {
+    width: 100%;
+    padding: 0.6rem 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.82rem;
+    background: var(--surface);
+    color: var(--text);
+    outline: none;
+    transition: border 0.15s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--harvest); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+
+  /* AMOUNT PREVIEW */
+  .amount-preview {
+    background: var(--soil);
+    color: white;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-top: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .amount-preview .label { font-size: 0.72rem; color: rgba(255,255,255,0.6); }
+  .amount-preview .value {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.3rem;
+    color: var(--harvest);
+  }
+
+  /* TOAST */
+  #toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--soil);
+    color: white;
+    padding: 0.85rem 1.5rem;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    display: none;
+    z-index: 999;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    border-left: 4px solid var(--harvest);
+    animation: slideUp 0.2s ease;
+  }
+  #toast.show { display: block; }
+  #toast.error { border-left-color: var(--danger); }
+
+  /* BILL SECTION */
+  .bill-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .bill-header {
+    background: var(--soil);
+    color: white;
+    padding: 1.5rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .bill-header h2 { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; }
+  .bill-header p { font-size: 0.75rem; color: rgba(255,255,255,0.6); margin-top: 0.25rem; }
+  .bill-total {
+    text-align: right;
+  }
+  .bill-total .label { font-size: 0.7rem; color: rgba(255,255,255,0.6); }
+  .bill-total .amount {
+    font-family: 'Syne', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--harvest);
+  }
+  .bill-meta {
+    display: flex;
+    gap: 2rem;
+    padding: 1rem 2rem;
+    background: #FDF8F4;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.78rem;
+  }
+  .bill-meta span { color: var(--muted); }
+  .bill-meta strong { color: var(--soil); }
+
+  /* EMPTY STATE */
+  .empty {
+    text-align: center;
+    padding: 3rem;
+    color: var(--muted);
+  }
+  .empty-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+  .empty p { font-size: 0.85rem; }
+
+  /* SEARCH BAR */
+  .search-bar {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .search-bar input { flex: 1; }
+
+  /* OUTSTANDING AMOUNT */
+  .outstanding {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    color: var(--danger);
+  }
+  .outstanding.zero { color: var(--success); }
+
+  /* PAGE TITLE */
+  .page-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.6rem;
+    color: var(--soil);
+    margin-bottom: 1.5rem;
+  }
+  .page-title span { color: var(--clay); font-weight: 400; font-size: 1rem; margin-left: 0.5rem; }
+
+  /* MONTH SELECTOR */
+  .month-selector {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.4rem 0.75rem;
+  }
+  .month-selector select {
+    border: none;
+    background: transparent;
+    padding: 0;
+    font-size: 0.8rem;
+  }
+
+  @media (max-width: 640px) {
+    header { padding: 0 1rem; }
+    .logo-text { display: none; }
+    main { padding: 1rem; }
+    .form-row { grid-template-columns: 1fr; }
+    .nav-tab { padding: 0.4rem 0.6rem; font-size: 0.72rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span class="logo-icon">🚜</span>
+    <span class="logo-text">Tractor Field <span>Manager</span></span>
+  </div>
+  <nav class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('dashboard')">Dashboard</button>
+    <button class="nav-tab" onclick="showPage('clients')">Clients</button>
+    <button class="nav-tab" onclick="showPage('work')">Work Log</button>
+    <button class="nav-tab" onclick="showPage('billing')">Billing</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- DASHBOARD -->
+  <div id="page-dashboard" class="page active">
+    <div class="page-title">Dashboard <span>Overview</span></div>
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card"><div class="stat-label">Loading...</div></div>
+    </div>
+    <div class="section-header">
+      <div class="section-title">Today's Work</div>
+    </div>
+    <div class="table-wrap" id="today-table">
+      <div class="empty"><div class="empty-icon">🌾</div><p>Loading today's entries...</p></div>
+    </div>
+  </div>
+
+  <!-- CLIENTS -->
+  <div id="page-clients" class="page">
+    <div class="page-title">Clients</div>
+    <div class="section-header">
+      <div class="search-bar" style="flex:1;margin:0">
+        <input type="text" id="client-search" placeholder="Search by name..." oninput="searchClients()"/>
+      </div>
+      <button class="btn btn-primary" style="margin-left:0.75rem" onclick="openAddClient()">+ Add Client</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Name</th><th>Village</th><th>Phone</th>
+            <th>Outstanding</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="clients-tbody">
+          <tr><td colspan="6"><div class="empty"><p>Loading...</p></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- WORK LOG -->
+  <div id="page-work" class="page">
+    <div class="page-title">Work Log</div>
+    <div class="section-header">
+      <div style="display:flex;gap:0.5rem;align-items:center">
+        <input type="date" id="work-filter-date" style="width:160px;font-size:0.78rem;padding:0.45rem 0.75rem" onchange="filterWorkByDate()"/>
+        <button class="btn btn-ghost btn-sm" onclick="clearWorkFilter()">Clear</button>
+      </div>
+      <button class="btn btn-primary" onclick="openLogWork()">+ Log Work</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th><th>Client</th><th>Field / Type</th>
+            <th>Hours</th><th>Rate</th><th>Amount</th><th>Status</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="work-tbody">
+          <tr><td colspan="8"><div class="empty"><p>Loading...</p></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- BILLING -->
+  <div id="page-billing" class="page">
+    <div class="page-title">Monthly Billing</div>
+    <div class="section-header">
+      <div style="display:flex;gap:0.75rem;align-items:center">
+        <select id="bill-client" style="width:200px" onchange="loadBill()">
+          <option value="">Select Client...</option>
+        </select>
+        <div class="month-selector">
+          <select id="bill-month" onchange="loadBill()">
+            <option value="1">Jan</option><option value="2">Feb</option>
+            <option value="3">Mar</option><option value="4">Apr</option>
+            <option value="5" selected>May</option><option value="6">Jun</option>
+            <option value="7">Jul</option><option value="8">Aug</option>
+            <option value="9">Sep</option><option value="10">Oct</option>
+            <option value="11">Nov</option><option value="12">Dec</option>
+          </select>
+          <select id="bill-year" onchange="loadBill()">
+            <option value="2025">2025</option>
+            <option value="2026" selected>2026</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div id="bill-content">
+      <div class="empty"><div class="empty-icon">📋</div><p>Select a client and month to view the bill.</p></div>
+    </div>
+  </div>
+
+</main>
+
+<!-- MODAL: Add Client -->
+<div class="modal-overlay" id="modal-client">
+  <div class="modal">
+    <div class="modal-title">Add New Client</div>
+    <div class="form-group">
+      <label>Full Name *</label>
+      <input type="text" id="c-name" placeholder="e.g. Raju Reddy"/>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Phone</label>
+        <input type="text" id="c-phone" placeholder="9876543210"/>
+      </div>
+      <div class="form-group">
+        <label>Village</label>
+        <input type="text" id="c-village" placeholder="Nalgonda"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Address</label>
+      <textarea id="c-address" rows="2" placeholder="Full address..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-client')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveClient()">Save Client</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Log Work -->
+<div class="modal-overlay" id="modal-work">
+  <div class="modal">
+    <div class="modal-title">Log Field Work</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Client *</label>
+        <select id="w-client"></select>
+      </div>
+      <div class="form-group">
+        <label>Date *</label>
+        <input type="date" id="w-date"/>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Work Type</label>
+        <select id="w-type">
+          <option>PLOUGHING</option>
+          <option>TILLING</option>
+          <option>HARVESTING</option>
+          <option>LEVELLING</option>
+          <option>GENERAL</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Field Description</label>
+        <input type="text" id="w-desc" placeholder="e.g. North paddy field"/>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Hours Worked *</label>
+        <input type="number" id="w-hours" placeholder="e.g. 6.5" step="0.5" min="0.5" oninput="updateAmountPreview()"/>
+      </div>
+      <div class="form-group">
+        <label>Rate / Hour (₹) *</label>
+        <input type="number" id="w-rate" placeholder="e.g. 500" oninput="updateAmountPreview()"/>
+      </div>
+    </div>
+    <div class="amount-preview" id="amount-preview" style="display:none">
+      <span class="label">CALCULATED AMOUNT</span>
+      <span class="value" id="preview-amount">₹0</span>
+    </div>
+    <div class="form-group" style="margin-top:0.75rem">
+      <label>Notes</label>
+      <input type="text" id="w-notes" placeholder="Optional notes..."/>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-work')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveWork()">Log Work</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Record Payment -->
+<div class="modal-overlay" id="modal-payment">
+  <div class="modal">
+    <div class="modal-title">Record Payment</div>
+    <div class="form-group">
+      <label>Client</label>
+      <input type="text" id="p-client-name" readonly style="background:#f0f0f0"/>
+      <input type="hidden" id="p-client-id"/>
+    </div>
+    <div class="form-group">
+      <label>Outstanding Balance</label>
+      <input type="text" id="p-outstanding" readonly style="background:#f0f0f0;color:var(--danger);font-weight:700"/>
+    </div>
+    <div class="form-group">
+      <label>Payment Amount (₹) *</label>
+      <input type="number" id="p-amount" placeholder="Enter amount received"/>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-payment')">Cancel</button>
+      <button class="btn btn-success" onclick="savePayment()">✓ Record Payment</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = '';  // empty = same origin (Spring Boot serves this file)
+
+// ── UTILS ──────────────────────────────────────────────────────
+function fmt(n) {
+  return '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function fmtDate(d) {
+  if (!d) return '-';
+  return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+function toast(msg, err = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show' + (err ? ' error' : '');
+  setTimeout(() => t.className = '', 3000);
+}
+async function api(url, opts = {}) {
+  const res = await fetch(API + url, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts
+  });
+  if (!res.ok) {
+    const e = await res.text();
+    throw new Error(e || res.statusText);
+  }
+  if (res.status === 204) return null;
+  return res.json();
+}
+
+// ── NAV ───────────────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  event.target.classList.add('active');
+  if (name === 'dashboard') loadDashboard();
+  if (name === 'clients') loadClients();
+  if (name === 'work') loadAllWork();
+  if (name === 'billing') loadBillingClients();
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const stats = await api('/api/dashboard/stats');
+    const grid = document.getElementById('stats-grid');
+    grid.innerHTML = `
+      <div class="stat-card">
+        <div class="stat-label">Total Clients</div>
+        <div class="stat-value">${stats.totalClients}</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">This Month Revenue</div>
+        <div class="stat-value" style="font-size:1.4rem">${fmt(stats.currentMonthRevenue)}</div>
+        <div class="stat-sub">May ${stats.queriedYear}</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-label">Total Outstanding</div>
+        <div class="stat-value" style="font-size:1.4rem">${fmt(stats.totalOutstandingAmount)}</div>
+        <div class="stat-sub">${stats.clientsWithOutstandingDues} clients with dues</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-label">Total Work Entries</div>
+        <div class="stat-value">${stats.totalWorkEntries}</div>
+      </div>
+    `;
+
+    const entries = await api('/api/work/today');
+    const tbody = document.getElementById('today-table');
+    if (!entries.length) {
+      tbody.innerHTML = '<div class="empty"><div class="empty-icon">🌾</div><p>No work logged today.</p></div>';
+      return;
+    }
+    tbody.innerHTML = `<table>
+      <thead><tr><th>Client</th><th>Field</th><th>Type</th><th>Hours</th><th>Amount</th></tr></thead>
+      <tbody>${entries.map(e => `
+        <tr>
+          <td>${e.client?.name || '-'}</td>
+          <td>${e.fieldDescription || '-'}</td>
+          <td><span class="work-type">${e.workType}</span></td>
+          <td>${e.hoursWorked}h</td>
+          <td><strong>${fmt(e.totalAmount)}</strong></td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+  } catch(err) {
+    toast('Failed to load dashboard', true);
+  }
+}
+
+// ── CLIENTS ───────────────────────────────────────────────────
+let allClients = [];
+
+async function loadClients() {
+  try {
+    allClients = await api('/api/clients');
+    renderClients(allClients);
+  } catch(e) { toast('Failed to load clients', true); }
+}
+
+function renderClients(clients) {
+  const tbody = document.getElementById('clients-tbody');
+  if (!clients.length) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty"><div class="empty-icon">👤</div><p>No clients yet.</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = clients.map(c => `
+    <tr>
+      <td style="color:var(--muted);font-size:0.75rem">#${c.id}</td>
+      <td><strong>${c.name}</strong></td>
+      <td>${c.village || '-'}</td>
+      <td>${c.phone || '-'}</td>
+      <td>
+        <span class="outstanding ${c.outstandingBalance == 0 ? 'zero' : ''}">
+          ${fmt(c.outstandingBalance)}
+        </span>
+      </td>
+      <td>
+        <div style="display:flex;gap:0.4rem">
+          ${c.outstandingBalance > 0 ? `<button class="btn btn-success btn-sm" onclick="openPayment(${c.id},'${c.name}',${c.outstandingBalance})">💰 Pay</button>` : ''}
+          <button class="btn btn-danger btn-sm" onclick="deleteClient(${c.id})">🗑</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function searchClients() {
+  const q = document.getElementById('client-search').value.toLowerCase();
+  renderClients(allClients.filter(c => c.name.toLowerCase().includes(q) || (c.village || '').toLowerCase().includes(q)));
+}
+
+function openAddClient() {
+  ['c-name','c-phone','c-village','c-address'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('modal-client').classList.add('open');
+}
+
+async function saveClient() {
+  const name = document.getElementById('c-name').value.trim();
+  if (!name) { toast('Name is required', true); return; }
+  try {
+    await api('/api/clients', {
+      method: 'POST',
+      body: JSON.stringify({
+        name,
+        phone: document.getElementById('c-phone').value,
+        village: document.getElementById('c-village').value,
+        address: document.getElementById('c-address').value
+      })
+    });
+    closeModal('modal-client');
+    loadClients();
+    toast('Client added successfully!');
+  } catch(e) { toast('Failed to add client', true); }
+}
+
+async function deleteClient(id) {
+  if (!confirm('Delete this client? This will also delete all their work entries.')) return;
+  try {
+    await api('/api/clients/' + id, { method: 'DELETE' });
+    loadClients();
+    toast('Client deleted');
+  } catch(e) { toast('Failed to delete', true); }
+}
+
+// ── WORK LOG ──────────────────────────────────────────────────
+async function loadAllWork() {
+  try {
+    const entries = await api('/api/work/today');
+    // Load all by fetching a wide range
+    const today = new Date();
+    const from = new Date(today.getFullYear(), today.getMonth() - 1, 1).toISOString().slice(0,10);
+    const to = today.toISOString().slice(0,10);
+    const all = await api(`/api/work/range?from=${from}&to=${to}`);
+    renderWork(all);
+  } catch(e) { toast('Failed to load work entries', true); }
+}
+
+async function filterWorkByDate() {
+  const date = document.getElementById('work-filter-date').value;
+  if (!date) return;
+  try {
+    const entries = await api(`/api/work/range?from=${date}&to=${date}`);
+    renderWork(entries);
+  } catch(e) { toast('Failed to filter', true); }
+}
+
+async function clearWorkFilter() {
+  document.getElementById('work-filter-date').value = '';
+  loadAllWork();
+}
+
+function renderWork(entries) {
+  const tbody = document.getElementById('work-tbody');
+  if (!entries.length) {
+    tbody.innerHTML = '<tr><td colspan="8"><div class="empty"><div class="empty-icon">🌾</div><p>No work entries found.</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = entries.map(e => `
+    <tr>
+      <td>${fmtDate(e.workDate)}</td>
+      <td><strong>${e.client?.name || '-'}</strong></td>
+      <td>
+        <span class="work-type">${e.workType}</span>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:2px">${e.fieldDescription || ''}</div>
+      </td>
+      <td>${e.hoursWorked}h</td>
+      <td>${fmt(e.ratePerHour)}/hr</td>
+      <td><strong>${fmt(e.totalAmount)}</strong></td>
+      <td><span class="badge badge-${e.paymentStatus?.toLowerCase()}">${e.paymentStatus}</span></td>
+      <td>
+        <div style="display:flex;gap:0.4rem">
+          ${e.paymentStatus !== 'PAID' ? `<button class="btn btn-success btn-sm" onclick="markPaid(${e.id})">✓</button>` : ''}
+          <button class="btn btn-danger btn-sm" onclick="deleteWork(${e.id})">🗑</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+async function openLogWork() {
+  // Populate client dropdown
+  const clients = await api('/api/clients');
+  const sel = document.getElementById('w-client');
+  sel.innerHTML = clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  document.getElementById('w-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('w-hours').value = '';
+  document.getElementById('w-rate').value = '';
+  document.getElementById('w-desc').value = '';
+  document.getElementById('w-notes').value = '';
+  document.getElementById('amount-preview').style.display = 'none';
+  document.getElementById('modal-work').classList.add('open');
+}
+
+function updateAmountPreview() {
+  const h = parseFloat(document.getElementById('w-hours').value);
+  const r = parseFloat(document.getElementById('w-rate').value);
+  const preview = document.getElementById('amount-preview');
+  if (h > 0 && r > 0) {
+    preview.style.display = 'flex';
+    document.getElementById('preview-amount').textContent = fmt(h * r);
+  } else {
+    preview.style.display = 'none';
+  }
+}
+
+async function saveWork() {
+  const clientId = document.getElementById('w-client').value;
+  const workDate = document.getElementById('w-date').value;
+  const hoursWorked = document.getElementById('w-hours').value;
+  const ratePerHour = document.getElementById('w-rate').value;
+  if (!clientId || !workDate || !hoursWorked || !ratePerHour) {
+    toast('Please fill all required fields', true); return;
+  }
+  try {
+    await api('/api/work', {
+      method: 'POST',
+      body: JSON.stringify({
+        clientId: parseInt(clientId),
+        workDate,
+        workType: document.getElementById('w-type').value,
+        fieldDescription: document.getElementById('w-desc').value,
+        hoursWorked: parseFloat(hoursWorked),
+        ratePerHour: parseFloat(ratePerHour),
+        notes: document.getElementById('w-notes').value
+      })
+    });
+    closeModal('modal-work');
+    loadAllWork();
+    toast('Work logged & amount added to client balance!');
+  } catch(e) { toast('Failed to log work', true); }
+}
+
+async function markPaid(id) {
+  try {
+    await api('/api/work/' + id + '/mark-paid', { method: 'POST' });
+    loadAllWork();
+    toast('Marked as paid');
+  } catch(e) { toast('Failed', true); }
+}
+
+async function deleteWork(id) {
+  if (!confirm('Delete this work entry?')) return;
+  try {
+    await api('/api/work/' + id, { method: 'DELETE' });
+    loadAllWork();
+    toast('Entry deleted');
+  } catch(e) { toast('Failed', true); }
+}
+
+// ── PAYMENT ───────────────────────────────────────────────────
+function openPayment(id, name, balance) {
+  document.getElementById('p-client-id').value = id;
+  document.getElementById('p-client-name').value = name;
+  document.getElementById('p-outstanding').value = fmt(balance);
+  document.getElementById('p-amount').value = '';
+  document.getElementById('modal-payment').classList.add('open');
+}
+
+async function savePayment() {
+  const id = document.getElementById('p-client-id').value;
+  const amount = parseFloat(document.getElementById('p-amount').value);
+  if (!amount || amount <= 0) { toast('Enter a valid amount', true); return; }
+  try {
+    await api('/api/clients/' + id + '/payment', {
+      method: 'POST',
+      body: JSON.stringify({ amount })
+    });
+    closeModal('modal-payment');
+    loadClients();
+    toast('Payment of ' + fmt(amount) + ' recorded!');
+  } catch(e) { toast('Failed to record payment', true); }
+}
+
+// ── BILLING ───────────────────────────────────────────────────
+async function loadBillingClients() {
+  const clients = await api('/api/clients');
+  const sel = document.getElementById('bill-client');
+  sel.innerHTML = '<option value="">Select Client...</option>' +
+    clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+}
+
+async function loadBill() {
+  const clientId = document.getElementById('bill-client').value;
+  const month = document.getElementById('bill-month').value;
+  const year = document.getElementById('bill-year').value;
+  if (!clientId) return;
+
+  const content = document.getElementById('bill-content');
+  content.innerHTML = '<div class="empty"><p>Loading...</p></div>';
+
+  try {
+    const bill = await api(`/api/work/client/${clientId}/monthly-bill?year=${year}&month=${month}`);
+    const monthName = new Date(year, month-1, 1).toLocaleString('default', { month: 'long' });
+
+    if (!bill.entries.length) {
+      content.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><p>No work entries for ${monthName} ${year}.</p></div>`;
+      return;
+    }
+
+    content.innerHTML = `
+      <div class="bill-card">
+        <div class="bill-header">
+          <div>
+            <h2>${bill.client.name}</h2>
+            <p>${bill.client.village || ''} ${bill.client.phone ? '· ' + bill.client.phone : ''}</p>
+            <p style="margin-top:0.5rem;font-size:0.72rem;opacity:0.7">Bill for ${monthName} ${year}</p>
+          </div>
+          <div class="bill-total">
+            <div class="label">TOTAL BILL</div>
+            <div class="amount">${fmt(bill.totalAmount)}</div>
+          </div>
+        </div>
+        <div class="bill-meta">
+          <div><span>Total Hours: </span><strong>${bill.totalHours}h</strong></div>
+          <div><span>Work Sessions: </span><strong>${bill.entries.length}</strong></div>
+          <div><span>Outstanding Balance: </span><strong style="color:var(--danger)">${fmt(bill.client.outstandingBalance)}</strong></div>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Date</th><th>Field</th><th>Type</th><th>Hours</th><th>Rate/hr</th><th>Amount</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            ${bill.entries.map(e => `
+              <tr>
+                <td>${fmtDate(e.workDate)}</td>
+                <td>${e.fieldDescription || '-'}</td>
+                <td><span class="work-type">${e.workType}</span></td>
+                <td>${e.hoursWorked}h</td>
+                <td>${fmt(e.ratePerHour)}</td>
+                <td><strong>${fmt(e.totalAmount)}</strong></td>
+                <td><span class="badge badge-${e.paymentStatus?.toLowerCase()}">${e.paymentStatus}</span></td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  } catch(e) { toast('Failed to load bill', true); }
+}
+
+// ── MODAL ─────────────────────────────────────────────────────
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+// ── INIT ──────────────────────────────────────────────────────
+loadDashboard();
+</script>
+</body>
+</html>

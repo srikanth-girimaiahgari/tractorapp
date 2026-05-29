@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  tractor-app:
+    build: .
+    container_name: tractor-field-manager
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=default
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/dashboard/stats"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+# NOTE for DevOps journey:
+# Later you can add:
+#   - A real PostgreSQL service here instead of H2
+#   - Prometheus + Grafana for monitoring
+#   - Nginx as reverse proxy

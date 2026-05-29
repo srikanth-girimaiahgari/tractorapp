@@ -1,0 +1,62 @@
+---
+# k8s/deployment.yaml
+# Use when you reach the Kubernetes stage of your DevOps journey
+# kubectl apply -f k8s/
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tractor-app
+  labels:
+    app: tractor-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: tractor-app
+  template:
+    metadata:
+      labels:
+        app: tractor-app
+    spec:
+      containers:
+        - name: tractor-app
+          image: tractor-app:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "default"
+          readinessProbe:
+            httpGet:
+              path: /api/dashboard/stats
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/dashboard/stats
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tractor-app-service
+spec:
+  selector:
+    app: tractor-app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: NodePort
