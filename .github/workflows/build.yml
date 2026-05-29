@@ -29,6 +29,9 @@ jobs:
       - name: Build Docker Image
         run: docker build -t tractor-app:${{ github.sha }} .
 
+      - name: Run Docker Image
+        run: docker run -d -p 8080:8080 tractor-app:${{ github.sha }}
+
       # Uncomment when you have Docker Hub credentials set up:
       # - name: Push to Docker Hub
       #   run: |
